@@ -1,0 +1,6 @@
+{
+  "variant": "M3",
+  "method": "35% structured filter pruning followed by full INT8 PTQ",
+  "schedule": "PolynomialDecay",
+  "target_sparsity": 0.35
+}
