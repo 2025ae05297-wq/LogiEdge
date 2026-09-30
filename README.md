@@ -1,1 +1,1 @@
-# LogiEdge
+# LogiEdge_MiniProject
