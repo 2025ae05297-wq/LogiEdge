@@ -1,3 +1,46 @@
-# LogiBridge Deployment Configuration
-
-Deployment configuration for LogiBridge.
+---
+- name: Deploy LogiEdge inference service
+	hosts: trucks
+	become: true
+	vars:
+		logibridge_dir: /opt/logibridge
+		image: localhost:5000/logibridge:latest
+		truck_id: FB-001
+	tasks:
+		- name: Create LogiBridge directory
+			ansible.builtin.file:
+				path: "{{ logibridge_dir }}"
+				state: directory
+				mode: "0750"
+		- name: Copy new model
+			ansible.builtin.copy:
+				src: ../inference/model.tflite
+				dest: "{{ logibridge_dir }}/model.tflite"
+				mode: "0640"
+		- name: Copy reference distribution
+			ansible.builtin.copy:
+				src: ../monitoring/reference_dist.json
+				dest: "{{ logibridge_dir }}/reference_dist.json"
+				mode: "0640"
+		- name: Stop running inference container
+			community.docker.docker_container:
+				name: logibridge-inference
+				state: absent
+		- name: Pull updated image
+			community.docker.docker_image:
+				name: "{{ image }}"
+				source: pull
+		- name: Start inference container
+			community.docker.docker_container:
+				name: logibridge-inference
+				image: "{{ image }}"
+				state: started
+				restart_policy: unless-stopped
+				env:
+					MODEL_PATH: "{{ logibridge_dir }}/model.tflite"
+					TRUCK_ID: "{{ truck_id }}"
+		- name: Wait and verify container
+			ansible.builtin.shell: "sleep 15 && docker inspect -f '{{{{.State.Running}}}}' logibridge-inference"
+			register: container_running
+			changed_when: false
+			failed_when: container_running.stdout.strip() != 'true'
