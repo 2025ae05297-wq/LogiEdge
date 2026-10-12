@@ -1,0 +1,5 @@
+{
+  "format": "portable-npz",
+  "quantisation": "full-int8 deployment target",
+  "calibration_samples": 200
+}
